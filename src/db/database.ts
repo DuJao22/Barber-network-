@@ -60,6 +60,7 @@ export async function initDb() {
         status TEXT DEFAULT 'active',
         subscription_due_date DATETIME,
         subscription_status TEXT DEFAULT 'active',
+        address TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -150,6 +151,13 @@ export async function initDb() {
       await database.exec('ALTER TABLE tenants ADD COLUMN subscription_status TEXT DEFAULT "active"');
     } catch (e) {
       // Columns likely already exist
+    }
+
+    // Migration: add address field
+    try {
+      await database.exec('ALTER TABLE tenants ADD COLUMN address TEXT');
+    } catch (e) {
+      // Column likely already exists
     }
 
     // Seed initial tenant if empty

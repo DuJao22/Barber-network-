@@ -19,8 +19,26 @@ const resolveTenant = async (req: Request, res: Response, next: NextFunction) =>
       return res.status(404).json({ error: 'Tenant not found' });
     }
     
+    // Check for 24h trial expiration
+    const createdAt = new Date(tenant.created_at);
+    const now = new Date();
+    const isTrialExpired = (now.getTime() - createdAt.getTime()) > (24 * 60 * 60 * 1000);
+    const isUnpaid = !tenant.subscription_due_date;
+
+    if (isTrialExpired && isUnpaid && tenant.status !== 'deleted') {
+      await db.run('UPDATE tenants SET status = "deleted" WHERE id = ?', tenant.id);
+      tenant.status = 'deleted';
+    }
+
     if (tenant.status === 'suspended') {
       return res.status(403).json({ error: 'Account suspended' });
+    }
+
+    if (tenant.status === 'deleted' && 
+        !req.path.includes('/subscription/pay') && 
+        !req.path.includes('/webhook') &&
+        !(req.path.includes('/admin/tenant') && req.method === 'GET')) {
+      return res.status(403).json({ error: 'Sistema Temporariamente Indisponível. Realize o pagamento de R$ 70 para ativar.' });
     }
 
     (req as any).tenant = tenant;
@@ -91,7 +109,7 @@ router.post('/webhook/mercadopago', async (req, res) => {
             newDueDate.setMonth(newDueDate.getMonth() + 1);
             
             await db.run(
-              'UPDATE tenants SET subscription_due_date = ?, subscription_status = "active" WHERE id = ?',
+              'UPDATE tenants SET subscription_due_date = ?, subscription_status = "active", status = "active" WHERE id = ?',
               newDueDate.toISOString(), tenantId
             );
 
@@ -281,7 +299,7 @@ router.get('/admin/tenant', resolveTenant, (req, res) => {
 
 // Admin: Update tenant details
 router.put('/admin/tenant', resolveTenant, async (req, res) => {
-  const { name, primary_color, secondary_color, payment_config, logo, cover_image, admin_username, admin_password } = req.body;
+  const { name, primary_color, secondary_color, payment_config, logo, cover_image, address, admin_username, admin_password } = req.body;
   try {
     const db = await getDb();
     const tenantId = (req as any).tenant.id;
@@ -296,6 +314,7 @@ router.put('/admin/tenant', resolveTenant, async (req, res) => {
     if (payment_config !== undefined) { updates.push('payment_config = ?'); values.push(payment_config); }
     if (logo !== undefined) { updates.push('logo = ?'); values.push(logo); }
     if (cover_image !== undefined) { updates.push('cover_image = ?'); values.push(cover_image); }
+    if (address !== undefined) { updates.push('address = ?'); values.push(address); }
     if (admin_username !== undefined) { updates.push('admin_username = ?'); values.push(admin_username); }
     if (admin_password !== undefined) { updates.push('admin_password = ?'); values.push(admin_password); }
     

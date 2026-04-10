@@ -72,10 +72,16 @@ export function TenantProvider() {
       return false;
     }
 
-    // No due date yet (new tenant) - Allow 3 minutes trial
+    // No due date yet (new tenant) - Allow 24 hours trial
     const createdAt = new Date(tenant.created_at);
-    const trialEnd = new Date(createdAt.getTime() + 3 * 60 * 1000);
+    const trialEnd = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
     return new Date() < trialEnd;
+  };
+
+  const isTrialPeriod = () => {
+    if (!tenant) return false;
+    if (tenant.subscription_due_date) return false;
+    return isSubscriptionActive();
   };
 
   if (!isSubscriptionActive() && !location.includes('/admin')) {
@@ -83,7 +89,10 @@ export function TenantProvider() {
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background">
         <h1 className="text-3xl font-display mb-4 text-text-main">Sistema Temporariamente Indisponível</h1>
         <p className="text-text-light mb-8 max-w-md">
-          Esta barbearia está com pendências de manutenção no sistema. Por favor, tente novamente mais tarde ou entre em contato diretamente com o estabelecimento.
+          Esta barbearia está temporariamente indisponível por falta de pagamento da taxa de manutenção. O proprietário deve realizar o pagamento para reativar o sistema.
+        </p>
+        <p className="text-sm text-text-light italic">
+          Se você é o proprietário, acesse o painel administrativo para reativar sua conta.
         </p>
       </div>
     );
@@ -91,6 +100,13 @@ export function TenantProvider() {
 
   return (
     <TenantContext.Provider value={{ tenant, loading, error }}>
+      {isTrialPeriod() && !location.includes('/admin') && (
+        <div className="fixed top-0 left-0 w-full z-[9999] pointer-events-none">
+          <div className="bg-red-600 text-white text-center py-2 px-4 text-xs md:text-sm font-bold animate-pulse pointer-events-auto shadow-lg">
+            ⚠️ SISTEMA EM PERÍODO DE TESTE (24H). PAGAMENTO DE R$ 70,00 OBRIGATÓRIO PARA MANTER ATIVO.
+          </div>
+        </div>
+      )}
       <Outlet />
     </TenantContext.Provider>
   );

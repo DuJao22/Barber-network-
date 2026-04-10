@@ -48,7 +48,8 @@ export default function AdminDashboard() {
     instagram_url: '',
     tiktok_url: '',
     primary_color: '#000000',
-    secondary_color: '#F3F4F6'
+    secondary_color: '#F3F4F6',
+    address: ''
   });
   const [tenantInfo, setTenantInfo] = useState<any>(null);
   const [showBalloon, setShowBalloon] = useState(false);
@@ -133,7 +134,8 @@ export default function AdminDashboard() {
             setSettings(prev => ({
               ...prev,
               primary_color: data.primary_color,
-              secondary_color: data.secondary_color || prev.secondary_color
+              secondary_color: data.secondary_color || prev.secondary_color,
+              address: data.address || prev.address
             }));
           }
         })
@@ -297,6 +299,7 @@ export default function AdminDashboard() {
 
   const isSubscriptionActive = () => {
     if (!tenantInfo) return true;
+    if (tenantInfo.status === 'deleted') return false;
     
     // If they have an active subscription with a future due date
     if (tenantInfo.subscription_due_date) {
@@ -305,9 +308,9 @@ export default function AdminDashboard() {
       return false;
     }
 
-    // No due date yet (new tenant) - Allow 3 minutes trial
+    // No due date yet (new tenant) - Allow 24 hours trial
     const createdAt = new Date(tenantInfo.created_at);
-    const trialEnd = new Date(createdAt.getTime() + 3 * 60 * 1000);
+    const trialEnd = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
     return new Date() < trialEnd;
   };
 
@@ -334,9 +337,9 @@ export default function AdminDashboard() {
           <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-display text-text-main mb-4">Assinatura Pendente</h2>
+          <h2 className="text-2xl font-display text-text-main mb-4">Sistema Temporariamente Indisponível</h2>
           <p className="text-text-light mb-8">
-            Para continuar usando o sistema e manter seu site online, é necessário realizar o pagamento da mensalidade de R$ 70,00 referente à hospedagem e manutenção.
+            Seu sistema está temporariamente indisponível por falta de pagamento. Para reativar seu site e liberar o acesso total, realize o pagamento da taxa de manutenção de R$ 70,00.
           </p>
           <button 
             onClick={handlePayment}
@@ -358,6 +361,23 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-6">
+      {!tenantInfo?.subscription_due_date && (
+        <div className="mb-6 bg-red-600 text-white p-4 rounded-2xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6" />
+            <div>
+              <p className="font-bold">SISTEMA EM PERÍODO DE TESTE (24 HORAS RESTANTES)</p>
+              <p className="text-sm opacity-90">O pagamento de R$ 70,00 é obrigatório para evitar a exclusão automática da sua conta.</p>
+            </div>
+          </div>
+          <button 
+            onClick={handlePayment}
+            className="px-6 py-2 bg-white text-red-600 font-bold rounded-xl hover:bg-white/90 transition-colors shrink-0"
+          >
+            Pagar Agora
+          </button>
+        </div>
+      )}
       <AnimatePresence>
         {showBalloon && (
           <motion.div 
@@ -937,13 +957,14 @@ export default function AdminDashboard() {
                     body: JSON.stringify(settings)
                   });
                   
-                  // Update tenant colors
+                  // Update tenant colors and address
                   await tenantFetch(tenantSlug!, '/api/admin/tenant', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       primary_color: settings.primary_color,
-                      secondary_color: settings.secondary_color
+                      secondary_color: settings.secondary_color,
+                      address: settings.address
                     })
                   });
 
@@ -996,6 +1017,16 @@ export default function AdminDashboard() {
                       <img src={settings.profile_photo} alt="Perfil" className="w-full h-full object-cover" />
                     </div>
                   )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-light mb-2">Endereço / Localização</label>
+                  <input 
+                    type="text" 
+                    value={settings.address} 
+                    onChange={e => setSettings({...settings, address: e.target.value})} 
+                    className="w-full px-4 py-3 rounded-xl border border-secondary focus:border-accent outline-none" 
+                    placeholder="Ex: Rua das Flores, 123 - Centro, São Paulo"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-2">Frase de Efeito (Subtítulo)</label>

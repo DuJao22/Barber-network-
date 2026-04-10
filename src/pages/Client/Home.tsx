@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Calendar, Clock, Instagram, MessageCircle, Music2 } from 'lucide-react';
+import { Calendar, Clock, Instagram, MapPin, MessageCircle, Music2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import SplashScreen from '../../components/SplashScreen';
 import ThreeBackground from '../../components/ThreeBackground';
@@ -35,11 +35,20 @@ export default function Home() {
     tiktok_url: ''
   });
   const [showSplash, setShowSplash] = useState(true);
+  const [showTrialCard, setShowTrialCard] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!tenantSlug) return;
     
+    // Show trial card every 45 seconds if in trial
+    const trialInterval = setInterval(() => {
+      const isTrial = !tenant?.subscription_due_date && tenant?.created_at;
+      if (isTrial) {
+        setShowTrialCard(true);
+      }
+    }, 45000);
+
     tenantFetch(tenantSlug, '/api/services')
       .then(res => res.json())
       .then(data => setServices(data));
@@ -73,12 +82,46 @@ export default function Home() {
         }
       }, 3100); // Wait for splash screen
     }
-  }, [tenantSlug]);
+    
+    return () => {
+      if (trialInterval) clearInterval(trialInterval);
+    };
+  }, [tenantSlug, tenant]);
 
   return (
     <>
       <AnimatePresence>
         {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showTrialCard && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-surface max-w-sm w-full p-8 rounded-3xl shadow-2xl text-center border-2 border-primary"
+            >
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Clock className="w-10 h-10 text-primary animate-pulse" />
+              </div>
+              <h2 className="text-2xl font-display text-accent mb-4">Aviso Importante</h2>
+              <p className="text-text-light mb-8">
+                Este sistema está em **período de teste (24h)**. Para manter esta barbearia ativa e evitar a exclusão automática, o pagamento da taxa de manutenção de **R$ 70,00** é obrigatório.
+              </p>
+              <button 
+                onClick={() => setShowTrialCard(false)}
+                className="w-full py-4 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/30"
+              >
+                Entendi
+              </button>
+              <p className="mt-4 text-[10px] text-text-light uppercase tracking-widest">
+                Exibição obrigatória durante o trial
+              </p>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       <div className="min-h-screen bg-background relative">
@@ -131,9 +174,16 @@ export default function Home() {
               <h1 className="text-3xl md:text-4xl font-medium text-accent mb-2">
                 {settings.profile_name}
               </h1>
-              <p className="text-xs md:text-sm font-semibold tracking-widest text-primary mb-6 uppercase">
+              <p className="text-xs md:text-sm font-semibold tracking-widest text-primary mb-2 uppercase">
                 {settings.subtitle}
               </p>
+              
+              {tenant?.address && (
+                <div className="flex items-center justify-center gap-2 text-text-light text-xs md:text-sm mb-6">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span>{tenant.address}</span>
+                </div>
+              )}
               
               {/* Social Icons */}
               <div className="flex justify-center gap-6 text-accent mb-10">
@@ -232,6 +282,41 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* Footer */}
+        <footer className="py-12 px-4 border-t border-secondary bg-surface/30 backdrop-blur-sm relative z-10">
+          <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full overflow-hidden mb-6 border-2 border-primary">
+              <img 
+                src={tenant?.logo || settings.profile_photo} 
+                alt="Logo" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="text-xl font-display text-accent mb-2">{settings.profile_name}</h3>
+            {tenant?.address && (
+              <div className="flex items-center gap-2 text-text-light text-sm mb-6 max-w-md">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <span>{tenant.address}</span>
+              </div>
+            )}
+            <div className="flex gap-6 mb-8">
+              {settings.instagram_url && (
+                <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-primary transition-colors">
+                  <Instagram className="w-5 h-5" />
+                </a>
+              )}
+              {settings.tiktok_url && (
+                <a href={settings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-primary transition-colors">
+                  <Music2 className="w-5 h-5" />
+                </a>
+              )}
+            </div>
+            <p className="text-xs text-text-light">
+              © {new Date().getFullYear()} {settings.profile_name}. Todos os direitos reservados.
+            </p>
+          </div>
+        </footer>
       </div>
     </>
   );
