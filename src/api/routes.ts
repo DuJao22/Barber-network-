@@ -185,8 +185,9 @@ router.post('/admin/subscription/pay', resolveTenant, async (req, res) => {
 
     res.json({ init_point: response.init_point });
   } catch (error) {
-    console.error('Error creating preference:', error);
-    res.status(500).json({ error: 'Erro ao criar pagamento' });
+    console.error('Error creating Mercado Pago preference:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: 'Erro ao criar pagamento', details: errorMessage });
   }
 });
 

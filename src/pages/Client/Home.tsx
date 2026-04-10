@@ -47,7 +47,7 @@ export default function Home() {
       if (data.init_point) {
         window.location.href = data.init_point;
       } else {
-        alert('Erro ao gerar pagamento: ' + (data.error || 'Desconhecido'));
+        alert('Erro ao gerar pagamento: ' + (data.details || data.error || 'Desconhecido'));
       }
     } catch (error) {
       alert('Erro de conexão ao gerar pagamento');
