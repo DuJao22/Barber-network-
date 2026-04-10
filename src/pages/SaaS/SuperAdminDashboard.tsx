@@ -44,10 +44,14 @@ export default function SuperAdminDashboard() {
   };
 
   const subscribeToNotifications = async () => {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator)) {
+      alert('Seu navegador não suporta Service Workers, necessário para notificações push.');
+      return;
+    }
 
     try {
       const registration = await navigator.serviceWorker.ready;
+      console.log('Service Worker ready, subscribing...');
       
       // Get VAPID public key from server
       const keyRes = await fetch('/api/superadmin/vapid-public-key');
@@ -169,7 +173,14 @@ export default function SuperAdminDashboard() {
 
         {/* Mobile Nav */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-secondary p-4 bg-surface">
+          <div className="md:hidden border-t border-secondary p-4 bg-surface space-y-3">
+            <button 
+              onClick={subscribeToNotifications}
+              className="flex items-center justify-center w-full gap-2 px-4 py-3 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-colors font-medium"
+            >
+              <Bell className="w-5 h-5" />
+              Ativar Notificações
+            </button>
             <button 
               onClick={() => {
                 localStorage.removeItem('superadmin_token');

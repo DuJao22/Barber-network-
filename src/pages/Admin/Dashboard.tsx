@@ -236,19 +236,28 @@ export default function AdminDashboard() {
   };
 
   const requestNotificationPermission = async () => {
+    console.log('Requesting notification permission...');
     if (!("Notification" in window)) {
       alert("Este navegador não suporta notificações.");
       return;
     }
 
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      new Notification("Notificações Ativadas! 🔔", {
-        body: "Você receberá avisos de novos agendamentos aqui.",
-        icon: "/favicon.ico"
-      });
-    } else {
-      alert("Você precisa permitir as notificações nas configurações do navegador.");
+    try {
+      const permission = await Notification.requestPermission();
+      console.log('Permission result:', permission);
+      if (permission === "granted") {
+        new Notification("Notificações Ativadas! 🔔", {
+          body: "Você receberá avisos de novos agendamentos aqui.",
+          icon: "/favicon.ico"
+        });
+      } else if (permission === "denied") {
+        alert("As notificações foram bloqueadas. Você precisa permitir as notificações nas configurações do seu navegador para receber avisos.");
+      } else {
+        alert("Permissão de notificação ignorada ou fechada.");
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      alert('Erro ao solicitar permissão de notificação.');
     }
   };
 
@@ -469,7 +478,7 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative z-10">
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <div className="w-full lg:w-auto">
             <h1 className="text-2xl md:text-3xl font-display text-text-main mb-2">Painel Administrativo</h1>
