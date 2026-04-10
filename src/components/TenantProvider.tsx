@@ -64,6 +64,7 @@ export function TenantProvider() {
 
   const isSubscriptionActive = () => {
     if (!tenant) return true;
+    if (tenant.is_exempt) return true;
     
     // If they have an active subscription with a future due date
     if (tenant.subscription_due_date) {
@@ -80,6 +81,7 @@ export function TenantProvider() {
 
   const isTrialPeriod = () => {
     if (!tenant) return false;
+    if (tenant.is_exempt) return false;
     if (tenant.subscription_due_date) return false;
     return isSubscriptionActive();
   };
