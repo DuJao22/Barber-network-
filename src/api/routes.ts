@@ -88,7 +88,7 @@ router.post('/webhook/mercadopago', async (req, res) => {
   
   if (type === 'payment' || req.query.topic === 'payment') {
     const paymentId = data?.id || req.query.id;
-    const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
     
     if (accessToken && paymentId) {
       try {
@@ -142,7 +142,7 @@ router.post('/webhook/mercadopago', async (req, res) => {
 // Subscription Payment Route
 router.post('/admin/subscription/pay', resolveTenant, async (req, res) => {
   const tenant = (req as any).tenant;
-  const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
   
   if (!accessToken) {
     return res.status(500).json({ error: 'Mercado Pago token not configured' });
