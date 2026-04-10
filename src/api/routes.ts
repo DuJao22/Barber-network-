@@ -73,6 +73,12 @@ router.post('/webhook/mercadopago', async (req, res) => {
           const tenantId = parseInt(payment.external_reference);
           const db = await getDb();
           
+          // Check if this payment was already processed
+          const alreadyProcessed = await db.get('SELECT id FROM processed_payments WHERE id = ?', paymentId.toString());
+          if (alreadyProcessed) {
+            return res.status(200).send('OK');
+          }
+
           const tenant = await db.get('SELECT subscription_due_date FROM tenants WHERE id = ?', tenantId);
           if (tenant) {
             let newDueDate = new Date();
@@ -87,6 +93,12 @@ router.post('/webhook/mercadopago', async (req, res) => {
             await db.run(
               'UPDATE tenants SET subscription_due_date = ?, subscription_status = "active" WHERE id = ?',
               newDueDate.toISOString(), tenantId
+            );
+
+            // Record the processed payment
+            await db.run(
+              'INSERT INTO processed_payments (id, tenant_id, amount, status) VALUES (?, ?, ?, ?)',
+              paymentId.toString(), tenantId, payment.transaction_amount, payment.status
             );
           }
         }

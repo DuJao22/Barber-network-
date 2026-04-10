@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format, isToday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, Clock, Check, X, CheckCircle2, AlertCircle, LogOut, Plus, Edit2, Trash2, Users, TrendingUp, DollarSign, Activity, BarChart2, Share2 } from 'lucide-react';
+import { Calendar, Clock, Check, X, CheckCircle2, AlertCircle, LogOut, Plus, Edit2, Trash2, Users, TrendingUp, DollarSign, Activity, BarChart2, Share2, ExternalLink, Sparkles } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { tenantFetch } from '../../lib/api';
@@ -51,6 +51,7 @@ export default function AdminDashboard() {
     secondary_color: '#F3F4F6'
   });
   const [tenantInfo, setTenantInfo] = useState<any>(null);
+  const [showBalloon, setShowBalloon] = useState(false);
   const [adminCredentials, setAdminCredentials] = useState({
     admin_username: '',
     admin_password: ''
@@ -191,7 +192,16 @@ export default function AdminDashboard() {
     }
 
     const interval = setInterval(() => fetchData(false), 30000);
-    return () => clearInterval(interval);
+    
+    // Show balloon after 5 seconds
+    const timer = setTimeout(() => {
+      setShowBalloon(true);
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -287,10 +297,18 @@ export default function AdminDashboard() {
 
   const isSubscriptionActive = () => {
     if (!tenantInfo) return true;
-    if (tenantInfo.subscription_status !== 'active') return false;
-    if (!tenantInfo.subscription_due_date) return true;
-    const dueDate = new Date(tenantInfo.subscription_due_date);
-    return dueDate > new Date();
+    
+    // If they have an active subscription with a future due date
+    if (tenantInfo.subscription_due_date) {
+      const dueDate = new Date(tenantInfo.subscription_due_date);
+      if (dueDate > new Date()) return true;
+      return false;
+    }
+
+    // No due date yet (new tenant) - Allow 3 minutes trial
+    const createdAt = new Date(tenantInfo.created_at);
+    const trialEnd = new Date(createdAt.getTime() + 3 * 60 * 1000);
+    return new Date() < trialEnd;
   };
 
   const handlePayment = async () => {
@@ -318,7 +336,7 @@ export default function AdminDashboard() {
           </div>
           <h2 className="text-2xl font-display text-text-main mb-4">Assinatura Pendente</h2>
           <p className="text-text-light mb-8">
-            Sua mensalidade de R$ 70,00 está pendente. Para continuar usando o sistema e recebendo agendamentos, por favor realize o pagamento.
+            Para continuar usando o sistema e manter seu site online, é necessário realizar o pagamento da mensalidade de R$ 70,00 referente à hospedagem e manutenção.
           </p>
           <button 
             onClick={handlePayment}
@@ -340,6 +358,45 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-6">
+      <AnimatePresence>
+        {showBalloon && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed bottom-8 right-8 z-50 max-w-xs"
+          >
+            <div className="bg-accent text-white p-6 rounded-2xl shadow-2xl relative">
+              <button 
+                onClick={() => setShowBalloon(false)}
+                className="absolute top-2 right-2 text-white/80 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex items-start gap-4">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-medium mb-1">Seu site está pronto!</p>
+                  <p className="text-sm text-white/90 mb-4">Clique abaixo para ver como ficou a página dos seus clientes.</p>
+                  <a 
+                    href={`/${tenantSlug}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-sm font-bold bg-white text-accent px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
+                  >
+                    Ver meu site <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            {/* Arrow */}
+            <div className="absolute -bottom-2 right-12 w-4 h-4 bg-accent rotate-45"></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-7xl mx-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
           <div>

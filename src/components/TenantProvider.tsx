@@ -64,10 +64,18 @@ export function TenantProvider() {
 
   const isSubscriptionActive = () => {
     if (!tenant) return true;
-    if (tenant.subscription_status !== 'active') return false;
-    if (!tenant.subscription_due_date) return true;
-    const dueDate = new Date(tenant.subscription_due_date);
-    return dueDate > new Date();
+    
+    // If they have an active subscription with a future due date
+    if (tenant.subscription_due_date) {
+      const dueDate = new Date(tenant.subscription_due_date);
+      if (dueDate > new Date()) return true;
+      return false;
+    }
+
+    // No due date yet (new tenant) - Allow 3 minutes trial
+    const createdAt = new Date(tenant.created_at);
+    const trialEnd = new Date(createdAt.getTime() + 3 * 60 * 1000);
+    return new Date() < trialEnd;
   };
 
   if (!isSubscriptionActive() && !location.includes('/admin')) {
@@ -75,7 +83,7 @@ export function TenantProvider() {
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background">
         <h1 className="text-3xl font-display mb-4 text-text-main">Sistema Temporariamente Indisponível</h1>
         <p className="text-text-light mb-8 max-w-md">
-          A barbearia está com pendências no sistema. Por favor, tente novamente mais tarde ou entre em contato diretamente com o estabelecimento.
+          Esta barbearia está com pendências de manutenção no sistema. Por favor, tente novamente mais tarde ou entre em contato diretamente com o estabelecimento.
         </p>
       </div>
     );

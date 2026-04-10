@@ -125,6 +125,15 @@ export async function initDb() {
         UNIQUE(tenant_id, setting_key),
         FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
       );
+
+      CREATE TABLE IF NOT EXISTS processed_payments (
+        id TEXT PRIMARY KEY,
+        tenant_id INTEGER NOT NULL,
+        amount REAL,
+        status TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
+      );
     `);
 
     // Migration: add admin_username and admin_password if they don't exist
