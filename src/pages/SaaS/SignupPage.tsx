@@ -26,7 +26,8 @@ export default function SignupPage() {
       if (res.ok) {
         navigate(`/${formData.slug}/admin/login`);
       } else {
-        alert('Erro ao criar conta. O link pode já estar em uso.');
+        const data = await res.json();
+        alert(`Erro ao criar conta: ${data.details || 'O link pode já estar em uso.'}`);
       }
     } catch (error) {
       alert('Erro de conexão');

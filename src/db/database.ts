@@ -153,34 +153,53 @@ export async function initDb() {
 
     // Migration: add admin_username and admin_password if they don't exist
     try {
-      await database.exec('ALTER TABLE tenants ADD COLUMN admin_username TEXT');
-      await database.exec('ALTER TABLE tenants ADD COLUMN admin_password TEXT');
+      const columns = await database.all('PRAGMA table_info(tenants)');
+      const hasAdminUser = columns.some((c: any) => c.name === 'admin_username');
+      if (!hasAdminUser) {
+        await database.exec('ALTER TABLE tenants ADD COLUMN admin_username TEXT');
+        await database.exec('ALTER TABLE tenants ADD COLUMN admin_password TEXT');
+      }
     } catch (e) {
-      // Columns likely already exist
+      console.log('Migration admin_username skipped or failed:', e);
     }
 
     // Migration: add subscription fields
     try {
-      await database.exec('ALTER TABLE tenants ADD COLUMN subscription_due_date DATETIME');
-      await database.exec('ALTER TABLE tenants ADD COLUMN subscription_status TEXT DEFAULT "active"');
+      const columns = await database.all('PRAGMA table_info(tenants)');
+      const hasSub = columns.some((c: any) => c.name === 'subscription_due_date');
+      if (!hasSub) {
+        await database.exec('ALTER TABLE tenants ADD COLUMN subscription_due_date DATETIME');
+        await database.exec('ALTER TABLE tenants ADD COLUMN subscription_status TEXT DEFAULT "active"');
+      }
     } catch (e) {
-      // Columns likely already exist
+      console.log('Migration subscription skipped or failed:', e);
     }
 
     // Migration: add address field
     try {
-      await database.exec('ALTER TABLE tenants ADD COLUMN address TEXT');
+      const columns = await database.all('PRAGMA table_info(tenants)');
+      const hasAddress = columns.some((c: any) => c.name === 'address');
+      if (!hasAddress) {
+        await database.exec('ALTER TABLE tenants ADD COLUMN address TEXT');
+      }
     } catch (e) {
-      // Column likely already exists
+      console.log('Migration address skipped or failed:', e);
     }
 
     // Migration: add user status and push subscription
     try {
-      await database.exec('ALTER TABLE users ADD COLUMN status TEXT DEFAULT "active"');
-    } catch (e) {}
-    try {
-      await database.exec('ALTER TABLE users ADD COLUMN push_subscription TEXT');
-    } catch (e) {}
+      const columns = await database.all('PRAGMA table_info(users)');
+      const hasStatus = columns.some((c: any) => c.name === 'status');
+      if (!hasStatus) {
+        await database.exec('ALTER TABLE users ADD COLUMN status TEXT DEFAULT "active"');
+      }
+      const hasPush = columns.some((c: any) => c.name === 'push_subscription');
+      if (!hasPush) {
+        await database.exec('ALTER TABLE users ADD COLUMN push_subscription TEXT');
+      }
+    } catch (e) {
+      console.log('Migration users skipped or failed:', e);
+    }
 
     // Seed initial tenant if empty
     const tenantCount = await database.get('SELECT COUNT(*) as count FROM tenants');

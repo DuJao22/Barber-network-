@@ -222,11 +222,13 @@ router.post('/superadmin/tenants', async (req, res) => {
   const secondary_color = '#E5E7EB';
   try {
     const db = await getDb();
+    console.log('Tentando criar tenant:', { slug, name });
     const result = await db.run(
       'INSERT INTO tenants (slug, name, primary_color, secondary_color, logo, cover_image, payment_config, admin_username, admin_password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       slug, name, primary_color, secondary_color, logo, cover_image, payment_config, admin_username || 'Dujao', admin_password || '30031936'
     );
     const tenantId = result.lastID;
+    console.log('Tenant criado com ID:', tenantId);
 
     // Seed default settings
     await db.run(`
@@ -274,7 +276,8 @@ router.post('/superadmin/tenants', async (req, res) => {
 
     res.json({ success: true, tenantId });
   } catch (error) {
-    res.status(500).json({ error: 'Error creating tenant' });
+    console.error('Erro detalhado ao criar tenant:', error);
+    res.status(500).json({ error: 'Error creating tenant', details: error instanceof Error ? error.message : String(error) });
   }
 });
 
