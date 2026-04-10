@@ -34,8 +34,9 @@ const resolveTenant = async (req: Request, res: Response, next: NextFunction) =>
     const now = new Date();
     const isTrialExpired = (now.getTime() - createdAt.getTime()) > (24 * 60 * 60 * 1000);
     const isUnpaid = !tenant.subscription_due_date;
+    const isExempt = !!tenant.is_exempt;
 
-    if (isTrialExpired && isUnpaid && tenant.status !== 'deleted') {
+    if (!isExempt && isTrialExpired && isUnpaid && tenant.status !== 'deleted') {
       await db.run('UPDATE tenants SET status = "deleted" WHERE id = ?', tenant.id);
       tenant.status = 'deleted';
     }
@@ -44,7 +45,7 @@ const resolveTenant = async (req: Request, res: Response, next: NextFunction) =>
       return res.status(403).json({ error: 'Account suspended' });
     }
 
-    if (tenant.status === 'deleted' && 
+    if (!isExempt && tenant.status === 'deleted' && 
         !req.path.includes('/subscription/pay') && 
         !req.path.includes('/webhook') &&
         !(req.path.includes('/admin/tenant') && req.method === 'GET')) {
@@ -175,7 +176,6 @@ router.post('/admin/subscription/pay', resolveTenant, async (req, res) => {
         payment_methods: {
           excluded_payment_types: [
             { id: 'ticket' },
-            { id: 'bank_transfer' },
             { id: 'atm' }
           ],
           installments: 1
@@ -292,12 +292,12 @@ router.post('/superadmin/tenants', async (req, res) => {
 
 router.put('/superadmin/tenants/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, primary_color, secondary_color, logo, cover_image, payment_config } = req.body;
+  const { name, primary_color, secondary_color, logo, cover_image, payment_config, is_exempt } = req.body;
   try {
     const db = await getDb();
     await db.run(
-      'UPDATE tenants SET name = ?, primary_color = ?, secondary_color = ?, logo = ?, cover_image = ?, payment_config = ? WHERE id = ?',
-      name, primary_color, secondary_color, logo, cover_image, payment_config, id
+      'UPDATE tenants SET name = ?, primary_color = ?, secondary_color = ?, logo = ?, cover_image = ?, payment_config = ?, is_exempt = ? WHERE id = ?',
+      name, primary_color, secondary_color, logo, cover_image, payment_config, is_exempt ? 1 : 0, id
     );
     res.json({ success: true });
   } catch (error) {

@@ -67,6 +67,7 @@ export async function initDb() {
         subscription_due_date DATETIME,
         subscription_status TEXT DEFAULT 'active',
         address TEXT,
+        is_exempt BOOLEAN DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -199,6 +200,17 @@ export async function initDb() {
       }
     } catch (e) {
       console.log('Migration users skipped or failed:', e);
+    }
+
+    // Migration: add is_exempt field
+    try {
+      const columns = await database.all('PRAGMA table_info(tenants)');
+      const hasExempt = columns.some((c: any) => c.name === 'is_exempt');
+      if (!hasExempt) {
+        await database.exec('ALTER TABLE tenants ADD COLUMN is_exempt BOOLEAN DEFAULT 0');
+      }
+    } catch (e) {
+      console.log('Migration is_exempt skipped or failed:', e);
     }
 
     // Seed initial tenant if empty

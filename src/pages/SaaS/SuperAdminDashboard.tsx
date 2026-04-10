@@ -28,7 +28,8 @@ export default function SuperAdminDashboard() {
     secondary_color: '',
     logo: '',
     cover_image: '',
-    payment_config: ''
+    payment_config: '',
+    is_exempt: false
   });
 
   useEffect(() => {
@@ -100,7 +101,8 @@ export default function SuperAdminDashboard() {
       secondary_color: tenant.secondary_color,
       logo: tenant.logo || '',
       cover_image: tenant.cover_image || '',
-      payment_config: tenant.payment_config || ''
+      payment_config: tenant.payment_config || '',
+      is_exempt: !!tenant.is_exempt
     });
   };
 
@@ -125,7 +127,8 @@ export default function SuperAdminDashboard() {
   };
 
   const activeTenants = tenants.filter(t => t.status === 'active').length;
-  const monthlyRevenue = activeTenants * 70;
+  const payingTenants = tenants.filter(t => t.status === 'active' && !t.is_exempt).length;
+  const monthlyRevenue = payingTenants * 70;
 
   return (
     <div className="min-h-screen bg-background">
@@ -226,6 +229,7 @@ export default function SuperAdminDashboard() {
                 <th className="p-4 font-medium text-text-light">Nome</th>
                 <th className="p-4 font-medium text-text-light">Link (Slug)</th>
                 <th className="p-4 font-medium text-text-light">Status</th>
+                <th className="p-4 font-medium text-text-light">Isento</th>
                 <th className="p-4 font-medium text-text-light">Ações</th>
               </tr>
             </thead>
@@ -239,6 +243,13 @@ export default function SuperAdminDashboard() {
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${t.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {t.status === 'active' ? 'Ativo' : 'Suspenso'}
                     </span>
+                  </td>
+                  <td className="p-4">
+                    {t.is_exempt ? (
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">Sim</span>
+                    ) : (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Não</span>
+                    )}
                   </td>
                   <td className="p-4 space-x-2">
                     <button 
@@ -287,6 +298,12 @@ export default function SuperAdminDashboard() {
                   {t.status === 'active' ? 'Ativo' : 'Suspenso'}
                 </span>
               </div>
+              
+              {t.is_exempt && (
+                <div className="mb-3">
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">Usuário Isento de Mensalidade</span>
+                </div>
+              )}
               
               <div className="grid grid-cols-2 gap-2 mt-4">
                 <button 
@@ -388,6 +405,18 @@ export default function SuperAdminDashboard() {
                   value={formData.payment_config}
                   onChange={e => setFormData({...formData, payment_config: e.target.value})}
                 />
+              </div>
+              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                <input 
+                  type="checkbox" 
+                  id="is_exempt_toggle"
+                  className="w-6 h-6 rounded-lg border-purple-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                  checked={formData.is_exempt}
+                  onChange={e => setFormData({...formData, is_exempt: e.target.checked})}
+                />
+                <label htmlFor="is_exempt_toggle" className="text-sm font-bold text-purple-900 cursor-pointer select-none">
+                  Isentar de Mensalidade (Uso Gratuito)
+                </label>
               </div>
               <div className="pt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <button type="button" onClick={() => setEditingTenant(null)} className="w-full sm:w-auto px-6 py-3 rounded-xl font-medium text-text-light hover:bg-secondary transition-colors">

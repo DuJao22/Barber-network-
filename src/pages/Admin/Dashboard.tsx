@@ -343,6 +343,7 @@ export default function AdminDashboard() {
 
   const isSubscriptionActive = () => {
     if (!tenantInfo) return true;
+    if (tenantInfo.is_exempt) return true;
     if (tenantInfo.status === 'deleted') return false;
     
     // If they have an active subscription with a future due date
@@ -405,22 +406,29 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      {!tenantInfo?.subscription_due_date && (
-        <div className="mb-6 bg-red-600 text-white p-4 rounded-2xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-6 h-6" />
+      {!tenantInfo?.subscription_due_date && !tenantInfo?.is_exempt && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+              <AlertCircle className="w-6 h-6" />
+            </div>
             <div>
-              <p className="font-bold">SISTEMA EM PERÍODO DE TESTE (24 HORAS RESTANTES)</p>
-              <p className="text-sm opacity-90">O pagamento de R$ 70,00 é obrigatório para evitar a exclusão automática da sua conta.</p>
+              <p className="font-bold text-lg md:text-xl uppercase">Sistema em Período de Teste</p>
+              <p className="text-sm md:text-base opacity-90">O pagamento de R$ 70,00 é obrigatório para evitar a exclusão automática da sua conta.</p>
             </div>
           </div>
           <button 
             onClick={handlePayment}
-            className="px-6 py-2 bg-white text-red-600 font-bold rounded-xl hover:bg-white/90 transition-colors shrink-0"
+            className="w-full md:w-auto px-8 py-3 bg-white text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-all shadow-lg active:scale-95 relative z-10"
           >
             Pagar Agora
           </button>
-        </div>
+        </motion.div>
       )}
       <AnimatePresence>
         {showBalloon && (
@@ -462,18 +470,18 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
       <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
-          <div>
-            <h1 className="text-3xl font-display text-text-main mb-2">Painel Administrativo</h1>
-            <p className="text-text-light">Gerencie os agendamentos e serviços da sua barbearia</p>
+        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
+          <div className="w-full lg:w-auto">
+            <h1 className="text-2xl md:text-3xl font-display text-text-main mb-2">Painel Administrativo</h1>
+            <p className="text-text-light text-sm md:text-base">Gerencie os agendamentos e serviços da sua barbearia</p>
           </div>
-          <div className="flex items-center gap-4 mt-4 md:mt-0">
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
             <button 
               onClick={requestNotificationPermission}
-              className="flex items-center px-4 py-2 bg-secondary text-text-main rounded-lg hover:bg-secondary/80 transition-colors shadow-sm"
+              className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 bg-secondary text-text-main rounded-xl hover:bg-secondary/80 transition-all shadow-sm font-medium text-sm"
             >
               <Bell className="w-4 h-4 mr-2" />
-              Ativar Notificações
+              Notificações
             </button>
             <button 
               onClick={() => {
@@ -481,13 +489,13 @@ export default function AdminDashboard() {
                 navigator.clipboard.writeText(url);
                 alert('Link da sua barbearia copiado para a área de transferência!');
               }}
-              className="flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors shadow-sm"
+              className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-all shadow-sm font-medium text-sm"
             >
-              <Share2 className="w-4 h-4 mr-2" /> Compartilhar Link
+              <Share2 className="w-4 h-4 mr-2" /> Compartilhar
             </button>
             <button 
               onClick={handleLogout}
-              className="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex lg:flex-none items-center justify-center px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all font-medium text-sm"
             >
               <LogOut className="w-4 h-4 mr-2" /> Sair
             </button>

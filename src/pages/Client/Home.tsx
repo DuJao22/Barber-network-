@@ -59,7 +59,7 @@ export default function Home() {
     
     // Show trial card every 45 seconds if in trial
     const trialInterval = setInterval(() => {
-      const isTrial = !tenant?.subscription_due_date && tenant?.created_at;
+      const isTrial = !tenant?.subscription_due_date && tenant?.created_at && !tenant?.is_exempt;
       if (isTrial) {
         setShowTrialCard(true);
       }
