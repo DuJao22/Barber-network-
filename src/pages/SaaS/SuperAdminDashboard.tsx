@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, LogOut, DollarSign, Users, Activity, Menu, Bell } from 'lucide-react';
+import { X, LogOut, DollarSign, Users, Activity, Menu, Bell, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -22,6 +22,7 @@ export default function SuperAdminDashboard() {
   const navigate = useNavigate();
   const [editingTenant, setEditingTenant] = useState<any | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isIframe, setIsIframe] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     primary_color: '',
@@ -33,6 +34,7 @@ export default function SuperAdminDashboard() {
   });
 
   useEffect(() => {
+    setIsIframe(window.self !== window.top);
     fetchTenants();
   }, []);
 
@@ -48,6 +50,9 @@ export default function SuperAdminDashboard() {
       alert('Seu navegador não suporta Service Workers, necessário para notificações push.');
       return;
     }
+
+    // Check if we are inside an iframe
+    const isIframe = window.self !== window.top;
 
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -76,7 +81,11 @@ export default function SuperAdminDashboard() {
       alert('Notificações ativadas com sucesso! 🔔');
     } catch (error) {
       console.error('Error subscribing to push notifications:', error);
-      alert('Erro ao ativar notificações. Verifique se você permitiu as notificações no navegador.');
+      if (isIframe) {
+        alert('Erro ao ativar notificações. Navegadores costumam bloquear notificações push dentro de iframes. Por favor, abra o sistema em uma nova aba para ativar as notificações.');
+      } else {
+        alert('Erro ao ativar notificações. Verifique se você permitiu as notificações no navegador (clique no cadeado ao lado da URL).');
+      }
     }
   };
 
@@ -143,6 +152,17 @@ export default function SuperAdminDashboard() {
           
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-4">
+            {isIframe && (
+              <a 
+                href={window.location.href} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors font-medium text-sm"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Abrir em Nova Aba
+              </a>
+            )}
             <button 
               onClick={subscribeToNotifications}
               className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-colors font-medium text-sm"
@@ -174,6 +194,17 @@ export default function SuperAdminDashboard() {
         {/* Mobile Nav */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-secondary p-4 bg-surface space-y-3">
+            {isIframe && (
+              <a 
+                href={window.location.href} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-full gap-2 px-4 py-3 bg-accent text-white rounded-xl hover:bg-accent/90 transition-colors font-medium"
+              >
+                <ExternalLink className="w-5 h-5" />
+                Abrir em Nova Aba
+              </a>
+            )}
             <button 
               onClick={subscribeToNotifications}
               className="flex items-center justify-center w-full gap-2 px-4 py-3 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-colors font-medium"

@@ -197,7 +197,10 @@ export default function AdminDashboard() {
     }
   };
 
+  const [isIframe, setIsIframe] = useState(false);
+
   useEffect(() => {
+    setIsIframe(window.self !== window.top);
     fetchData(true);
     
     if ("Notification" in window && Notification.permission === "default") {
@@ -242,22 +245,34 @@ export default function AdminDashboard() {
       return;
     }
 
+    // Check if we are inside an iframe
+    const isIframe = window.self !== window.top;
+
     try {
       const permission = await Notification.requestPermission();
       console.log('Permission result:', permission);
+      
       if (permission === "granted") {
         new Notification("Notificações Ativadas! 🔔", {
           body: "Você receberá avisos de novos agendamentos aqui.",
           icon: "/favicon.ico"
         });
       } else if (permission === "denied") {
-        alert("As notificações foram bloqueadas. Você precisa permitir as notificações nas configurações do seu navegador para receber avisos.");
+        alert("As notificações foram bloqueadas. Você precisa permitir as notificações nas configurações do seu navegador (clique no cadeado ao lado da URL) para receber avisos.");
       } else {
-        alert("Permissão de notificação ignorada ou fechada.");
+        if (isIframe) {
+          alert("Aviso: O navegador bloqueou a solicitação de notificação por estar dentro de um quadro (iframe). Por favor, abra o sistema em uma nova aba (clique no botão 'Ver meu site' e acesse o painel por lá) para ativar as notificações.");
+        } else {
+          alert("Permissão de notificação ignorada ou fechada.");
+        }
       }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
-      alert('Erro ao solicitar permissão de notificação.');
+      if (isIframe) {
+        alert('Erro ao solicitar permissão. Navegadores costumam bloquear notificações dentro de iframes por segurança. Por favor, abra o sistema em uma nova aba para ativar as notificações.');
+      } else {
+        alert('Erro ao solicitar permissão de notificação. Verifique as configurações do seu navegador.');
+      }
     }
   };
 
@@ -485,6 +500,17 @@ export default function AdminDashboard() {
             <p className="text-text-light text-sm md:text-base">Gerencie os agendamentos e serviços da sua barbearia</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            {isIframe && (
+              <a 
+                href={window.location.href} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 bg-accent text-white rounded-xl hover:bg-accent/90 transition-all shadow-sm font-medium text-sm"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Abrir em Nova Aba
+              </a>
+            )}
             <button 
               onClick={requestNotificationPermission}
               className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 bg-secondary text-text-main rounded-xl hover:bg-secondary/80 transition-all shadow-sm font-medium text-sm"
