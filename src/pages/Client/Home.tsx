@@ -38,6 +38,22 @@ export default function Home() {
   const [showTrialCard, setShowTrialCard] = useState(false);
   const navigate = useNavigate();
 
+  const handlePayment = async () => {
+    try {
+      const res = await tenantFetch(tenantSlug!, '/api/admin/subscription/pay', {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        alert('Erro ao gerar pagamento: ' + (data.error || 'Desconhecido'));
+      }
+    } catch (error) {
+      alert('Erro de conexão ao gerar pagamento');
+    }
+  };
+
   useEffect(() => {
     if (!tenantSlug) return;
     
@@ -110,12 +126,20 @@ export default function Home() {
               <p className="text-text-light mb-8">
                 Este sistema está em **período de teste (24h)**. Para manter esta barbearia ativa e evitar a exclusão automática, o pagamento da taxa de manutenção de **R$ 70,00** é obrigatório.
               </p>
-              <button 
-                onClick={() => setShowTrialCard(false)}
-                className="w-full py-4 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/30"
-              >
-                Entendi
-              </button>
+              <div className="space-y-3">
+                <button 
+                  onClick={handlePayment}
+                  className="w-full py-4 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/30"
+                >
+                  Pagar Agora (R$ 70,00)
+                </button>
+                <button 
+                  onClick={() => setShowTrialCard(false)}
+                  className="w-full py-3 text-text-light hover:bg-secondary/50 rounded-xl font-medium transition-colors"
+                >
+                  Continuar Lendo
+                </button>
+              </div>
               <p className="mt-4 text-[10px] text-text-light uppercase tracking-widest">
                 Exibição obrigatória durante o trial
               </p>

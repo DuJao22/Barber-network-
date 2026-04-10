@@ -106,7 +106,7 @@ router.post('/webhook/mercadopago', async (req, res) => {
                 newDueDate = currentDue;
               }
             }
-            newDueDate.setMonth(newDueDate.getMonth() + 1);
+            newDueDate.setDate(newDueDate.getDate() + 30);
             
             await db.run(
               'UPDATE tenants SET subscription_due_date = ?, subscription_status = "active", status = "active" WHERE id = ?',
