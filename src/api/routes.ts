@@ -1,8 +1,18 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { getDb } from '../db/database';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import webpush from 'web-push';
 
 const router = Router();
+
+// VAPID keys setup
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:admin@barbernetwork.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 // Middleware to resolve tenant
 const resolveTenant = async (req: Request, res: Response, next: NextFunction) => {
@@ -180,6 +190,22 @@ router.post('/admin/subscription/pay', resolveTenant, async (req, res) => {
   }
 });
 
+router.get('/superadmin/vapid-public-key', async (req, res) => {
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+router.post('/superadmin/push-subscription', async (req, res) => {
+  const { subscription } = req.body;
+  try {
+    const db = await getDb();
+    // We only keep the latest subscription for simplicity or we could keep multiple
+    await db.run('INSERT INTO superadmin_subscriptions (subscription) VALUES (?)', JSON.stringify(subscription));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error saving subscription' });
+  }
+});
+
 router.get('/superadmin/tenants', async (req, res) => {
   try {
     const db = await getDb();
@@ -221,6 +247,30 @@ router.post('/superadmin/tenants', async (req, res) => {
       (?, 5, '09:00', '18:00', 1),
       (?, 6, '09:00', '18:00', 1)
     `, tenantId, tenantId, tenantId, tenantId, tenantId, tenantId, tenantId);
+
+    // Notify Super Admin
+    try {
+      const subscriptions = await db.all('SELECT subscription FROM superadmin_subscriptions');
+      const payload = JSON.stringify({
+        title: 'Nova Barbearia Criada! 💈',
+        body: `A barbearia "${name}" acabou de ser registrada no sistema.`,
+        url: '/superadmin'
+      });
+
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification(JSON.parse(sub.subscription), payload);
+        } catch (err) {
+          console.error('Error sending push notification:', err);
+          // If subscription is expired, remove it
+          if ((err as any).statusCode === 410 || (err as any).statusCode === 404) {
+            await db.run('DELETE FROM superadmin_subscriptions WHERE subscription = ?', sub.subscription);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching subscriptions for notification:', err);
+    }
 
     res.json({ success: true, tenantId });
   } catch (error) {
@@ -456,6 +506,13 @@ router.post('/appointments', resolveTenant, async (req, res) => {
   try {
     const db = await getDb();
     
+    if (user_id) {
+      const user = await db.get('SELECT status FROM users WHERE id = ? AND tenant_id = ?', user_id, tenantId);
+      if (user && user.status === 'inactive') {
+        return res.status(403).json({ error: 'Sua conta está desativada. Entre em contato com o administrador.' });
+      }
+    }
+    
     const existing = await db.all(
       "SELECT id FROM appointments WHERE tenant_id = ? AND date = ? AND time = ? AND status != 'Cancelado'",
       tenantId, date, time
@@ -559,8 +616,11 @@ router.post('/users/login', resolveTenant, async (req, res) => {
   const tenantId = (req as any).tenant.id;
   try {
     const db = await getDb();
-    const results = await db.all('SELECT id, name, phone FROM users WHERE tenant_id = ? AND phone = ? AND password = ?', tenantId, phone, password);
+    const results = await db.all('SELECT id, name, phone, status FROM users WHERE tenant_id = ? AND phone = ? AND password = ?', tenantId, phone, password);
     if (results && results.length > 0) {
+      if (results[0].status === 'inactive') {
+        return res.status(403).json({ error: 'Sua conta está desativada. Entre em contato com o administrador.' });
+      }
       res.json({ success: true, user: results[0] });
     } else {
       res.status(401).json({ error: 'Senha incorreta' });
@@ -687,6 +747,7 @@ router.get('/admin/crm/clients', resolveTenant, async (req, res) => {
         u.id, 
         u.name, 
         u.phone, 
+        u.status,
         u.created_at,
         COUNT(a.id) as total_appointments,
         SUM(CASE WHEN a.status IN ('Finalizado', 'Confirmado') THEN COALESCE(s.promotional_price, s.price) ELSE 0 END) as total_spent,
@@ -702,6 +763,35 @@ router.get('/admin/crm/clients', resolveTenant, async (req, res) => {
     res.json(clients);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao buscar lista de clientes' });
+  }
+});
+
+router.patch('/admin/crm/clients/:id/status', resolveTenant, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const tenantId = (req as any).tenant.id;
+  if (!['active', 'inactive'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+  try {
+    const db = await getDb();
+    await db.run('UPDATE users SET status = ? WHERE id = ? AND tenant_id = ?', status, id, tenantId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar status do cliente' });
+  }
+});
+
+router.post('/users/:id/push-subscription', resolveTenant, async (req, res) => {
+  const { id } = req.params;
+  const { subscription } = req.body;
+  const tenantId = (req as any).tenant.id;
+  try {
+    const db = await getDb();
+    await db.run('UPDATE users SET push_subscription = ? WHERE id = ? AND tenant_id = ?', JSON.stringify(subscription), id, tenantId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao salvar inscrição de notificação' });
   }
 });
 

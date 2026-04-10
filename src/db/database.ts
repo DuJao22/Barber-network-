@@ -1,29 +1,33 @@
-import sqlite3 from 'sqlite3';
-import { open, Database } from 'sqlite';
-import path from 'path';
+import { Database } from '@sqlitecloud/drivers';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 class DBWrapper {
   private db: Database;
   
-  constructor(db: Database) {
-    this.db = db;
+  constructor(connectionString: string) {
+    this.db = new Database(connectionString);
   }
   
   async all(sql: string, ...params: any[]) {
-    return await this.db.all(sql, ...params);
+    return await this.db.sql(sql, ...params);
   }
   
   async get(sql: string, ...params: any[]) {
-    return await this.db.get(sql, ...params);
+    const results = await this.db.sql(sql, ...params);
+    return results && results.length > 0 ? results[0] : null;
   }
   
   async run(sql: string, ...params: any[]) {
-    const res = await this.db.run(sql, ...params);
-    return { lastID: res.lastID, changes: res.changes };
+    const res = await this.db.sql(sql, ...params);
+    // SQLite Cloud returns results differently, but we need to mock lastID/changes if possible
+    // For now, we'll return a generic object or try to extract if available
+    return { lastID: (res as any).lastID || null, changes: (res as any).changes || null };
   }
   
   async exec(sql: string) {
-    return await this.db.exec(sql);
+    return await this.db.sql(sql);
   }
 }
 
@@ -31,12 +35,14 @@ let db: DBWrapper | null = null;
 
 export async function getDb() {
   if (!db) {
-    const dbPath = path.resolve(process.cwd(), 'database.sqlite');
-    const sqliteDb = await open({
-      filename: dbPath,
-      driver: sqlite3.Database
-    });
-    db = new DBWrapper(sqliteDb);
+    const connectionString = process.env.SQLITE_CLOUD_CONNECTION_STRING;
+    if (!connectionString) {
+      throw new Error('SQLITE_CLOUD_CONNECTION_STRING is not defined in environment variables');
+    }
+    db = new DBWrapper(connectionString);
+    
+    // Ensure we are using the correct database if specified in the connection string or via USE
+    // Example: await db.exec('USE DATABASE my_database;');
   }
   return db;
 }
@@ -82,6 +88,8 @@ export async function initDb() {
         name TEXT NOT NULL,
         phone TEXT NOT NULL,
         password TEXT NOT NULL,
+        status TEXT DEFAULT 'active',
+        push_subscription TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(tenant_id, phone),
         FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
@@ -135,6 +143,12 @@ export async function initDb() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
       );
+
+      CREATE TABLE IF NOT EXISTS superadmin_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subscription TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Migration: add admin_username and admin_password if they don't exist
@@ -159,6 +173,14 @@ export async function initDb() {
     } catch (e) {
       // Column likely already exists
     }
+
+    // Migration: add user status and push subscription
+    try {
+      await database.exec('ALTER TABLE users ADD COLUMN status TEXT DEFAULT "active"');
+    } catch (e) {}
+    try {
+      await database.exec('ALTER TABLE users ADD COLUMN push_subscription TEXT');
+    } catch (e) {}
 
     // Seed initial tenant if empty
     const tenantCount = await database.get('SELECT COUNT(*) as count FROM tenants');

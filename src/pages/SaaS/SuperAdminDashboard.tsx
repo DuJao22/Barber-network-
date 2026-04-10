@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { X, LogOut, DollarSign, Users, Activity, Menu } from 'lucide-react';
+import { X, LogOut, DollarSign, Users, Activity, Menu, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 export default function SuperAdminDashboard() {
   const [tenants, setTenants] = useState<any[]>([]);
@@ -24,6 +39,39 @@ export default function SuperAdminDashboard() {
     const res = await fetch('/api/superadmin/tenants');
     if (res.ok) {
       setTenants(await res.json());
+    }
+  };
+
+  const subscribeToNotifications = async () => {
+    if (!('serviceWorker' in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      
+      // Get VAPID public key from server
+      const keyRes = await fetch('/api/superadmin/vapid-public-key');
+      const { publicKey } = await keyRes.json();
+      
+      if (!publicKey) {
+        alert('VAPID Public Key não configurada no servidor (.env)');
+        return;
+      }
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      await fetch('/api/superadmin/push-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription })
+      });
+
+      alert('Notificações ativadas com sucesso! 🔔');
+    } catch (error) {
+      console.error('Error subscribing to push notifications:', error);
+      alert('Erro ao ativar notificações. Verifique se você permitiu as notificações no navegador.');
     }
   };
 
@@ -88,6 +136,13 @@ export default function SuperAdminDashboard() {
           
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-4">
+            <button 
+              onClick={subscribeToNotifications}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-colors font-medium text-sm"
+            >
+              <Bell className="w-4 h-4" />
+              Ativar Notificações
+            </button>
             <button 
               onClick={() => {
                 localStorage.removeItem('superadmin_token');

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format, isToday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, Clock, Check, X, CheckCircle2, AlertCircle, LogOut, Plus, Edit2, Trash2, Users, TrendingUp, DollarSign, Activity, BarChart2, Share2, ExternalLink, Sparkles } from 'lucide-react';
+import { Calendar, Clock, Check, X, CheckCircle2, AlertCircle, LogOut, Plus, Edit2, Trash2, Users, TrendingUp, DollarSign, Activity, BarChart2, Share2, ExternalLink, Sparkles, Bell } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { tenantFetch } from '../../lib/api';
@@ -176,10 +176,21 @@ export default function AdminDashboard() {
     if (!("Notification" in window)) return;
 
     if (Notification.permission === "granted") {
-      new Notification("Novo Agendamento! ✨", {
+      const title = "Novo Agendamento! ✨";
+      const options = {
         body: `${appointment.client_name} agendou ${appointment.service_name} para ${format(parseISO(appointment.date), 'dd/MM')} às ${appointment.time}`,
-        icon: "/favicon.ico"
-      });
+        icon: "/favicon.ico",
+        badge: "/favicon.ico",
+        vibrate: [100, 50, 100]
+      };
+
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification(title, options);
+        });
+      } else {
+        new Notification(title, options);
+      }
       
       const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
       audio.play().catch(() => {});
@@ -221,6 +232,39 @@ export default function AdminDashboard() {
       if (res.ok) fetchData();
     } catch (error: any) {
       console.warn('Update error:', error.message);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("Este navegador não suporta notificações.");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      new Notification("Notificações Ativadas! 🔔", {
+        body: "Você receberá avisos de novos agendamentos aqui.",
+        icon: "/favicon.ico"
+      });
+    } else {
+      alert("Você precisa permitir as notificações nas configurações do navegador.");
+    }
+  };
+
+  const toggleUserStatus = async (userId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      await tenantFetch(tenantSlug!, `/api/admin/crm/clients/${userId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+      // Refresh CRM data
+      tenantFetch(tenantSlug!, '/api/admin/crm/clients')
+        .then(res => res.json())
+        .then(data => setCrmClients(Array.isArray(data) ? data : []));
+    } catch (error) {
+      console.error('Error updating user status:', error);
     }
   };
 
@@ -424,6 +468,13 @@ export default function AdminDashboard() {
             <p className="text-text-light">Gerencie os agendamentos e serviços da sua barbearia</p>
           </div>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
+            <button 
+              onClick={requestNotificationPermission}
+              className="flex items-center px-4 py-2 bg-secondary text-text-main rounded-lg hover:bg-secondary/80 transition-colors shadow-sm"
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              Ativar Notificações
+            </button>
             <button 
               onClick={() => {
                 const url = window.location.origin + '/' + tenantSlug;
@@ -691,6 +742,7 @@ export default function AdminDashboard() {
                       <th className="p-4 font-medium">Agendamentos</th>
                       <th className="p-4 font-medium">Total Gasto</th>
                       <th className="p-4 font-medium">Última Visita</th>
+                      <th className="p-4 font-medium">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-secondary">
@@ -708,6 +760,18 @@ export default function AdminDashboard() {
                         </td>
                         <td className="p-4 text-text-light">
                           {client.last_appointment ? format(parseISO(client.last_appointment), 'dd/MM/yyyy') : 'Nunca'}
+                        </td>
+                        <td className="p-4">
+                          <button 
+                            onClick={() => toggleUserStatus(client.id, client.status)}
+                            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                              client.status === 'active' 
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            }`}
+                          >
+                            {client.status === 'active' ? 'Ativo' : 'Desativado'}
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1462,6 +1526,12 @@ export default function AdminDashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      <footer className="mt-12 py-6 border-t border-secondary text-center">
+        <p className="text-[10px] text-text-light/60 font-medium tracking-wider uppercase">
+          Sistema desenvolvido por <span className="text-primary">João Layon</span> • CEO da <span className="text-accent">DS Company</span>
+        </p>
+      </footer>
     </div>
   );
 }

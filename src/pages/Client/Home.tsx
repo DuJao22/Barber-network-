@@ -336,8 +336,11 @@ export default function Home() {
                 </a>
               )}
             </div>
-            <p className="text-xs text-text-light">
+            <p className="text-xs text-text-light mb-2">
               © {new Date().getFullYear()} {settings.profile_name}. Todos os direitos reservados.
+            </p>
+            <p className="text-[10px] text-text-light/60 font-medium tracking-wider uppercase">
+              Desenvolvido por <span className="text-primary">João Layon</span> • CEO da <span className="text-accent">DS Company</span>
             </p>
           </div>
         </footer>
