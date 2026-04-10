@@ -152,6 +152,15 @@ router.post('/admin/subscription/pay', resolveTenant, async (req, res) => {
     const client = new MercadoPagoConfig({ accessToken });
     const preference = new Preference(client);
     
+    let protocol = req.protocol;
+    // Force https on Render/Production
+    if (req.get('x-forwarded-proto')) {
+      protocol = 'https';
+    }
+    
+    const baseUrl = `${protocol}://${req.get('host')}`;
+    console.log('Creating preference with baseUrl:', baseUrl);
+
     const response = await preference.create({
       body: {
         items: [
@@ -173,13 +182,12 @@ router.post('/admin/subscription/pay', resolveTenant, async (req, res) => {
         },
         external_reference: tenant.id.toString(),
         back_urls: {
-          success: `${req.protocol}://${req.get('host')}/${tenant.slug}/admin`,
-          failure: `${req.protocol}://${req.get('host')}/${tenant.slug}/admin`,
-          pending: `${req.protocol}://${req.get('host')}/${tenant.slug}/admin`
+          success: `${baseUrl}/${tenant.slug}/admin`,
+          failure: `${baseUrl}/${tenant.slug}/admin`,
+          pending: `${baseUrl}/${tenant.slug}/admin`
         },
         auto_return: 'approved',
-        // In preview environment, webhook might not be reachable from outside, but we set it anyway
-        notification_url: `${req.protocol}://${req.get('host')}/api/webhook/mercadopago`
+        notification_url: `${baseUrl}/api/webhook/mercadopago`
       }
     });
 
