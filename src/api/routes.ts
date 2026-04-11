@@ -582,6 +582,18 @@ router.patch('/admin/appointments/:id/status', resolveTenant, async (req, res) =
   }
 });
 
+// Admin: Delete all services (for bulk update)
+router.delete('/admin/services-bulk', resolveTenant, async (req, res) => {
+  const tenantId = (req as any).tenant.id;
+  try {
+    const db = await getDb();
+    await db.run('DELETE FROM services WHERE tenant_id = ?', tenantId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao excluir serviços' });
+  }
+});
+
 // Admin: Login
 router.post('/admin/login', resolveTenant, async (req, res) => {
   const { username, password } = req.body;
