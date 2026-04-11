@@ -14,13 +14,12 @@ export function initCronJobs() {
     try {
       const db = await getDb();
       const now = new Date();
-    const tomorrow = addDays(now, 1);
-    const inOneHour = addHours(now, 1);
+      const tomorrow = addDays(now, 1);
+      const inOneHour = addHours(now, 1);
 
-    const tomorrowStr = format(tomorrow, 'yyyy-MM-dd');
-    const todayStr = format(now, 'yyyy-MM-dd');
+      const tomorrowStr = format(tomorrow, 'yyyy-MM-dd');
+      const todayStr = format(now, 'yyyy-MM-dd');
 
-    try {
       // 1. Check for appointments tomorrow (1 day before)
       
       // 1 Day Before Notifications
