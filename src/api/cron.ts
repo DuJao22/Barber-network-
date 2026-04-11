@@ -5,9 +5,15 @@ import { addDays, format, parseISO, isAfter, isBefore, addHours } from 'date-fns
 export function initCronJobs() {
   // Run every 15 minutes
   cron.schedule('*/15 * * * *', async () => {
+    if (!process.env.SQLITE_CLOUD_CONNECTION_STRING) {
+      console.log('[NODE-CRON] Skipping check: SQLITE_CLOUD_CONNECTION_STRING not configured.');
+      return;
+    }
+
     console.log('Running scheduled notifications check...');
-    const db = await getDb();
-    const now = new Date();
+    try {
+      const db = await getDb();
+      const now = new Date();
     const tomorrow = addDays(now, 1);
     const inOneHour = addHours(now, 1);
 

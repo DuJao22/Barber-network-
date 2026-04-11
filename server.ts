@@ -8,17 +8,22 @@ import { initCronJobs } from "./src/api/cron";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   app.set('trust proxy', true);
   app.use(express.json());
+
+  // Health check endpoint for Render
+  app.get("/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
 
   // Initialize Database
   try {
     console.log("Initializing database...");
     await Promise.race([
       initDb(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Database initialization timed out")), 5000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Database initialization timed out")), 15000))
     ]);
     console.log("Database initialized.");
   } catch (err) {
@@ -46,7 +51,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

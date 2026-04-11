@@ -67,7 +67,8 @@ export default function Home() {
 
     tenantFetch(tenantSlug, '/api/services')
       .then(res => res.json())
-      .then(data => setServices(data));
+      .then(data => setServices(data))
+      .catch(err => console.error('Error fetching services:', err));
 
     tenantFetch(tenantSlug, '/api/settings')
       .then(res => res.json())
@@ -87,7 +88,8 @@ export default function Home() {
             tiktok_url: data.tiktok_url || prev.tiktok_url
           }));
         }
-      });
+      })
+      .catch(err => console.error('Error fetching settings:', err));
 
     // Handle scroll to hash if present
     if (window.location.hash === '#servicos') {

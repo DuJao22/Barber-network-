@@ -39,12 +39,25 @@ export async function getDb() {
     if (!connectionString) {
       throw new Error('SQLITE_CLOUD_CONNECTION_STRING is not defined in environment variables');
     }
-    db = new DBWrapper(connectionString);
-    
-    // Ensure we are using the correct database if specified in the connection string or via USE
-    // Example: await db.exec('USE DATABASE my_database;');
+
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        db = new DBWrapper(connectionString);
+        // Test connection with a simple query
+        await db.get('SELECT 1');
+        console.log('Successfully connected to SQLite Cloud');
+        break;
+      } catch (err) {
+        retries--;
+        console.error(`Failed to connect to SQLite Cloud. Retries left: ${retries}`, err);
+        if (retries === 0) throw err;
+        // Wait 2 seconds before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
   }
-  return db;
+  return db!;
 }
 
 export async function initDb() {
