@@ -5,29 +5,45 @@ dotenv.config();
 
 class DBWrapper {
   private db: Database;
+  private connectionString: string;
   
   constructor(connectionString: string) {
+    this.connectionString = connectionString;
     this.db = new Database(connectionString);
+  }
+
+  private async retryQuery<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err: any) {
+      // If connection is lost or stale, try to reconnect once
+      console.error('Database query error, attempting to reconnect...', err.message);
+      try {
+        this.db = new Database(this.connectionString);
+        return await fn();
+      } catch (retryErr) {
+        console.error('Reconnection failed:', retryErr);
+        throw retryErr;
+      }
+    }
   }
   
   async all(sql: string, ...params: any[]) {
-    return await this.db.sql(sql, ...params);
+    return await this.retryQuery(() => this.db.sql(sql, ...params));
   }
   
   async get(sql: string, ...params: any[]) {
-    const results = await this.db.sql(sql, ...params);
+    const results = await this.retryQuery(() => this.db.sql(sql, ...params));
     return results && results.length > 0 ? results[0] : null;
   }
   
   async run(sql: string, ...params: any[]) {
-    const res = await this.db.sql(sql, ...params);
-    // SQLite Cloud returns results differently, but we need to mock lastID/changes if possible
-    // For now, we'll return a generic object or try to extract if available
+    const res = await this.retryQuery(() => this.db.sql(sql, ...params));
     return { lastID: (res as any).lastID || null, changes: (res as any).changes || null };
   }
   
   async exec(sql: string) {
-    return await this.db.sql(sql);
+    return await this.retryQuery(() => this.db.sql(sql));
   }
 }
 

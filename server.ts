@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import { initDb } from "./src/db/database";
+import { initDb, getDb } from "./src/db/database";
 import apiRoutes from "./src/api/routes";
 import { initCronJobs } from "./src/api/cron";
 
@@ -14,8 +14,14 @@ async function startServer() {
   app.use(express.json());
 
   // Health check endpoint for Render
-  app.get("/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  app.get("/health", async (req, res) => {
+    try {
+      const db = await getDb();
+      await db.get('SELECT 1');
+      res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+    } catch (err) {
+      res.status(500).json({ status: "error", database: "disconnected", timestamp: new Date().toISOString() });
+    }
   });
 
   // Initialize Database
@@ -26,6 +32,17 @@ async function startServer() {
       new Promise((_, reject) => setTimeout(() => reject(new Error("Database initialization timed out")), 15000))
     ]);
     console.log("Database initialized.");
+
+    // Database Keep-Alive (every 5 minutes)
+    setInterval(async () => {
+      try {
+        const db = await getDb();
+        await db.get('SELECT 1');
+        console.log('[DB-KEEP-ALIVE] Ping successful');
+      } catch (err) {
+        console.error('[DB-KEEP-ALIVE] Ping failed:', err);
+      }
+    }, 5 * 60 * 1000);
   } catch (err) {
     console.error("Failed to initialize database:", err);
   }
