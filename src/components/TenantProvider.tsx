@@ -105,7 +105,7 @@ export function TenantProvider() {
       {isTrialPeriod() && !location.includes('/admin') && (
         <div className="fixed top-0 left-0 w-full z-[9999] pointer-events-none">
           <div className="bg-red-600 text-white text-center py-2 px-4 text-xs md:text-sm font-bold animate-pulse pointer-events-auto shadow-lg">
-            ⚠️ SISTEMA EM PERÍODO DE TESTE (24H). PAGAMENTO DE R$ 70,00 OBRIGATÓRIO PARA MANTER ATIVO.
+            ⚠️ SISTEMA EM PERÍODO DE TESTE (24H). PAGAMENTO DE R$ 50,00 OBRIGATÓRIO PARA MANTER ATIVO.
           </div>
         </div>
       )}

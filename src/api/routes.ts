@@ -49,7 +49,7 @@ const resolveTenant = async (req: Request, res: Response, next: NextFunction) =>
         !req.path.includes('/subscription/pay') && 
         !req.path.includes('/webhook') &&
         !(req.path.includes('/admin/tenant') && req.method === 'GET')) {
-      return res.status(403).json({ error: 'Sistema Temporariamente Indisponível. Realize o pagamento de R$ 70 para ativar.' });
+      return res.status(403).json({ error: 'Sistema Temporariamente Indisponível. Realize o pagamento de R$ 50 para ativar.' });
     }
 
     (req as any).tenant = tenant;
@@ -169,7 +169,7 @@ router.post('/admin/subscription/pay', resolveTenant, async (req, res) => {
             id: 'mensalidade',
             title: `Mensalidade Sistema - ${tenant.name}`,
             quantity: 1,
-            unit_price: 70.00,
+            unit_price: 50.00,
             currency_id: 'BRL',
           }
         ],

@@ -408,7 +408,7 @@ export default function AdminDashboard() {
           </div>
           <h2 className="text-2xl font-display text-text-main mb-4">Sistema Temporariamente Indisponível</h2>
           <p className="text-text-light mb-8">
-            Seu sistema está temporariamente indisponível por falta de pagamento. Para reativar seu site e liberar o acesso total, realize o pagamento da taxa de manutenção de R$ 70,00.
+            Seu sistema está temporariamente indisponível por falta de pagamento. Para reativar seu site e liberar o acesso total, realize o pagamento da taxa de manutenção de R$ 50,00.
           </p>
           <button 
             onClick={handlePayment}
@@ -443,7 +443,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="font-bold text-lg md:text-xl uppercase">Sistema em Período de Teste</p>
-              <p className="text-sm md:text-base opacity-90">O pagamento de R$ 70,00 é obrigatório para evitar a exclusão automática da sua conta.</p>
+              <p className="text-sm md:text-base opacity-90">O pagamento de R$ 50,00 é obrigatório para evitar a exclusão automática da sua conta.</p>
             </div>
           </div>
           <button 

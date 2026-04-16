@@ -141,7 +141,7 @@ export default function SuperAdminDashboard() {
 
   const activeTenants = tenants.filter(t => t.status === 'active').length;
   const payingTenants = tenants.filter(t => t.status === 'active' && !t.is_exempt).length;
-  const monthlyRevenue = payingTenants * 70;
+  const monthlyRevenue = payingTenants * 50;
 
   return (
     <div className="min-h-screen bg-background">

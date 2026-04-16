@@ -126,14 +126,14 @@ export default function Home() {
               </div>
               <h2 className="text-2xl font-display text-accent mb-4">Aviso Importante</h2>
               <p className="text-text-light mb-8">
-                Este sistema está em **período de teste (24h)**. Para manter esta barbearia ativa e evitar a exclusão automática, o pagamento da taxa de manutenção de **R$ 70,00** é obrigatório.
+                Este sistema está em **período de teste (24h)**. Para manter esta barbearia ativa e evitar a exclusão automática, o pagamento da taxa de manutenção de **R$ 50,00** é obrigatório.
               </p>
               <div className="space-y-3">
                 <button 
                   onClick={handlePayment}
                   className="w-full py-4 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/30"
                 >
-                  Pagar Agora (R$ 70,00)
+                  Pagar Agora (R$ 50,00)
                 </button>
                 <button 
                   onClick={() => setShowTrialCard(false)}

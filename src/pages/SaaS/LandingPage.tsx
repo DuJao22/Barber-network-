@@ -14,7 +14,13 @@ import {
   ShieldCheck,
   Store,
   X,
-  ChevronDown
+  ChevronDown,
+  Users2,
+  Trophy,
+  Flame,
+  Zap,
+  TrendingDown,
+  Quote
 } from 'lucide-react';
 
 interface Tenant {
@@ -29,9 +35,36 @@ export default function LandingPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginSlug, setLoginSlug] = useState('');
+  const [activeNotification, setActiveNotification] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const mockNotifications = [
+    "João acabou de criar uma barbearia ✂️",
+    "Estilo & Corte acabou de fazer um agendamento 📅",
+    "Ricardo assinou o Plano Profissional 💎",
+    "Novo agendamento realizado via link direto 🚀",
+    "Mais um barbeiro aderiu ao sistema agora 🔥",
+    "Agenda da Barbearia Central lotada para hoje ✅"
+  ];
+
   useEffect(() => {
+    // Simulated real-time social proof
+    const showNextNotification = () => {
+      const randomDelay = Math.floor(Math.random() * 15000) + 10000; // 10-25 seconds
+      setTimeout(() => {
+        const randomIndex = Math.floor(Math.random() * mockNotifications.length);
+        setActiveNotification(mockNotifications[randomIndex]);
+        
+        // Hide after 5 seconds
+        setTimeout(() => {
+          setActiveNotification(null);
+          showNextNotification();
+        }, 5000);
+      }, randomDelay);
+    };
+
+    showNextNotification();
+
     fetch('/api/tenants')
       .then(res => res.json())
       .then(data => {
@@ -51,6 +84,25 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-white selection:text-black">
+      <AnimatePresence>
+        {activeNotification && (
+          <motion.div
+            initial={{ opacity: 0, x: -50, y: 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="fixed bottom-6 left-6 z-[100] bg-white text-black p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-zinc-200 lg:max-w-xs"
+          >
+            <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center shrink-0">
+              <Zap className="w-5 h-5 text-zinc-900" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-0.5">Atividade Recente</p>
+              <p className="text-sm font-medium leading-tight">{activeNotification}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 bg-zinc-950/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -136,26 +188,33 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <span className="px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-sm font-medium text-white/80 mb-6 inline-block">
-              O sistema definitivo para barbearias de alto nível
-            </span>
-            <h1 className="text-5xl md:text-7xl font-display font-bold text-white tracking-tight mb-6 leading-tight">
+            <div className="mb-10 space-y-4">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-sm md:text-base font-bold text-zinc-400">
+                <span className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+                  <Users2 className="w-4 h-4 text-white" />
+                  🔥 Mais de 127 barbeiros já estão usando
+                </span>
+                <span className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+                  <CheckCircle2 className="w-4 h-4 text-white" />
+                  💈 +3.842 agendamentos realizados nos últimos 30 dias
+                </span>
+              </div>
+              <span className="text-white font-medium block">💰 Barbeiros aumentando o faturamento todos os dias</span>
+            </div>
+
+            <h1 className="text-5xl md:text-8xl font-display font-bold text-white tracking-tight mb-8 leading-tight">
               Sua barbearia no <br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">
                 piloto automático.
               </span>
             </h1>
-            <p className="text-xl text-text-light max-w-2xl mx-auto mb-10 leading-relaxed">
-              Pare de perder tempo agendando pelo WhatsApp. Tenha seu próprio aplicativo de agendamentos, com a sua marca, e foque no que realmente importa: cortar cabelo e faturar.
+            <p className="text-xl text-text-light max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+              Pare de perder tempo agendando pelo WhatsApp. Tenha seu próprio aplicativo de agendamentos, com a sua marca, e foque no que realmente importa: <span className="text-white underline decoration-white/30">cortar cabelo e faturar mais</span>.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/criar-conta" className="w-full sm:w-auto px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-200 transition-all flex items-center justify-center group">
-                Profissionalizar minha barbearia
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <Link to="/criar-conta" className="w-full sm:w-auto px-10 py-5 bg-white text-black rounded-full font-bold text-xl hover:bg-gray-200 transition-all flex items-center justify-center group shadow-[0_0_50px_rgba(255,255,255,0.2)]">
+                Profissionalizar minha barbearia <ArrowRight className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <a href="#detalhes" className="w-full sm:w-auto px-8 py-4 bg-zinc-900 border border-white/10 text-white rounded-full font-bold text-lg hover:bg-zinc-800 transition-all flex items-center justify-center">
-                Ver mais informações
-              </a>
             </div>
             
             <motion.div 
@@ -225,79 +284,231 @@ export default function LandingPage() {
       </section>
 
       {/* The Solution (Benefits) */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 relative">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">A revolução na sua barbearia</h2>
-            <p className="text-text-light text-lg max-w-2xl mx-auto">
-              O Barber Network entrega tudo que você precisa para escalar seu negócio e oferecer uma experiência premium.
+            <span className="text-white font-bold text-sm tracking-widest uppercase mb-4 block">Resultados Reais</span>
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-4">Transformação, não apenas elogios.</h2>
+            <p className="text-text-light text-xl max-w-2xl mx-auto mt-6">
+              Veja por que os melhores barbeiros do Brasil estão migrando para o Barber Network.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="flex gap-4">
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0">
-                  <Clock className="w-6 h-6 text-black" />
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "Eu vivia esquecendo cliente... agora minha agenda lota sozinha e não perco mais um minuto respondendo 'tem horário?'",
+                author: "Carlos",
+                role: "Barbeiro Profissional",
+                stat: "Tempo livre dobrado"
+              },
+              {
+                quote: "Só com os lembretes automáticos já parei de perder dinheiro com 'furos'. O sistema se paga sozinho em 2 dias.",
+                author: "Rafael",
+                role: "Dono de barbearia",
+                stat: "Zero esquecimentos"
+              },
+              {
+                quote: "Em 1 mês usando o sistema, aumentei meu faturamento em 32% só pela facilidade que o cliente tem de agendar.",
+                author: "Diego",
+                role: "Mestre Barbeiro",
+                stat: "+32% de faturamento"
+              }
+            ].map((testimony, i) => (
+              <motion.div 
+                key={i}
+                whileHover={{ y: -10 }}
+                className="p-8 rounded-3xl bg-zinc-900 border border-white/10 relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Quote className="w-16 h-16 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Agenda Lotada 24/7</h3>
-                  <p className="text-text-light">Seu link de agendamento funciona de madrugada, nos finais de semana e feriados. O cliente escolhe o horário sozinho, sem depender de você.</p>
+                <div className="mb-6 flex gap-1">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <div key={s} className="w-4 h-4 rounded-full bg-white/20" />
+                  ))}
                 </div>
-              </div>
+                <p className="text-white text-lg leading-relaxed mb-8 italic">"{testimony.quote}"</p>
+                <div className="flex items-center justify-between border-t border-white/5 pt-6">
+                  <div>
+                    <h4 className="text-white font-bold">{testimony.author}</h4>
+                    <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">{testimony.role}</p>
+                  </div>
+                  <div className="text-sm font-display font-bold text-white px-3 py-1 bg-white/5 rounded-lg border border-white/10 uppercase">
+                    {testimony.stat}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              <div className="flex gap-4">
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-6 h-6 text-black" />
+      {/* System Proof / Screen Previews */}
+      <section className="py-24 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <span className="flex items-center gap-2 text-white font-bold mb-6">
+                <Flame className="w-5 h-5" />
+                DADOS QUE NÃO MENTEM
+              </span>
+              <h2 className="text-4xl md:text-6xl font-display font-bold text-white mb-8 leading-tight">
+                Tudo sob controle <br /> 
+                <span className="text-zinc-500">na palma da mão.</span>
+              </h2>
+              <div className="space-y-6">
+                <div className="flex gap-4 p-6 rounded-3xl border border-white/10 bg-zinc-900/50">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-black" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">Agenda Lotada</h3>
+                    <p className="text-zinc-400">Vizualização clara de todos os seus compromissos, organizados por hora e barbeiro.</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Sua Marca, Suas Cores</h3>
-                  <p className="text-text-light">Não é um app genérico. Você personaliza o sistema com seu logo, foto de capa e as cores da sua barbearia. Uma experiência 100% sua.</p>
+                <div className="flex gap-4 p-6 rounded-3xl border border-white/10 bg-zinc-900/50">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-6 h-6 text-black" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">Faturamento em Tempo Real</h3>
+                    <p className="text-zinc-400">Saiba exatamente quanto sua barbearia produziu no dia, na semana e no mês.</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0">
-                  <TrendingUp className="w-6 h-6 text-black" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Gestão Inteligente</h3>
-                  <p className="text-text-light">Painel administrativo completo para acompanhar faturamento, serviços mais populares e histórico de clientes. Tome decisões baseadas em dados.</p>
+                <div className="flex gap-4 p-6 rounded-3xl border border-white/10 bg-zinc-900/50">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shrink-0">
+                    <Trophy className="w-6 h-6 text-black" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">Ranking de Profissionais</h3>
+                    <p className="text-zinc-400">Descubra quem são seus barbeiros mais produtivos e os serviços mais buscados.</p>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent rounded-3xl transform rotate-3 scale-105 border border-white/10" />
-              <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 relative z-10 shadow-2xl">
-                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-6">
-                  <div>
-                    <h4 className="text-white font-bold text-lg">Barbearia Premium</h4>
-                    <p className="text-sm text-text-light">app.com/premium</p>
+              {/* Visual Mock of Dashboard */}
+              <motion.div 
+                initial={{ rotate: 10, y: 100, opacity: 0 }}
+                whileInView={{ rotate: 0, y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                className="bg-zinc-900 border border-white/10 rounded-3xl p-6 shadow-2xl relative z-10"
+              >
+                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
                   </div>
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                    <Scissors className="w-6 h-6 text-black" />
-                  </div>
+                  <span className="text-xs text-zinc-500 font-mono">dashboard.barbernetwork.app</span>
                 </div>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-zinc-950">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                          <Smartphone className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-white font-medium text-sm">Corte Degradê</p>
-                          <p className="text-xs text-text-light">45 min</p>
-                        </div>
-                      </div>
-                      <span className="text-white font-bold">R$ 45,00</span>
+                
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-xs text-zinc-500 font-bold mb-1 uppercase">Faturamento Hoje</p>
+                    <p className="text-2xl font-display font-bold text-white">R$ 580,00</p>
+                    <div className="flex items-center gap-1 text-xs text-green-500 mt-2 font-bold">
+                      <TrendingUp className="w-3 h-3" /> +12% vs. ontem
                     </div>
-                  ))}
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-xs text-zinc-500 font-bold mb-1 uppercase">Confirmados</p>
+                    <p className="text-2xl font-display font-bold text-white">18/20</p>
+                    <div className="flex items-center gap-1 text-xs text-white/50 mt-2 font-medium">
+                      Otimização de 90%
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                <div className="space-y-4">
+                   <p className="text-xs text-zinc-500 font-bold mb-2 uppercase">Próximos Agendamentos</p>
+                   {[
+                     { name: "João Silva", time: "14:00", service: "Corte Degradê" },
+                     { name: "Marcos Oliveira", time: "15:00", service: "Barba & Toalha" },
+                     { name: "Ricardo Dias", time: "16:00", service: "Corte + Pigmentação" }
+                   ].map((a, i) => (
+                     <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-950 border border-white/5">
+                       <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold">
+                           {a.name[0]}
+                         </div>
+                         <div>
+                            <p className="text-white text-sm font-bold">{a.name}</p>
+                            <p className="text-xs text-zinc-500">{a.service}</p>
+                         </div>
+                       </div>
+                       <span className="text-xs font-mono text-zinc-400 bg-white/5 px-2 py-1 rounded-md">{a.time}</span>
+                     </div>
+                   ))}
+                </div>
+              </motion.div>
+
+              {/* Decorative side cards */}
+              <motion.div 
+                initial={{ x: 50, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="absolute -right-8 top-1/2 -translate-y-1/2 bg-white text-black p-4 rounded-2xl shadow-2xl z-20 border border-zinc-200 hidden lg:block"
+              >
+                <div className="flex items-center gap-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                  <Flame className="w-3 h-3 text-red-500" />
+                  Alerta Agenda
+                </div>
+                <p className="text-sm font-bold leading-tight">Você atingiu 95% da <br />capacidade para hoje!</p>
+              </motion.div>
+
+              <motion.div 
+                initial={{ x: -100, opacity: 0 }}
+                whileInView={{ x: -20, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="absolute -left-20 bottom-10 bg-zinc-900 border border-white/20 p-6 rounded-3xl shadow-2xl z-0 hidden lg:block"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-yellow-400/20 rounded-full flex items-center justify-center">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase">Ranking Mensal</p>
+                    <p className="text-sm font-bold text-white">Top 1: Carlos Alberto</p>
+                  </div>
+                </div>
+                <div className="w-32 h-2 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "85%" }}
+                    transition={{ duration: 1, delay: 0.5 }}
+                    className="h-full bg-yellow-500 rounded-full"
+                  />
+                </div>
+              </motion.div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Authority Section */}
+      <section className="py-24 px-6 bg-white text-black">
+        <div className="max-w-7xl mx-auto flex flex-col items-center">
+          <div className="text-center max-w-3xl mb-12">
+            <h2 className="text-4xl md:text-7xl font-display font-black mb-6 uppercase leading-tight italic">
+               Diferencie os Profissionais <br /> <span className="text-zinc-400">dos amadores.</span>
+            </h2>
+            <p className="text-xl font-medium leading-relaxed">
+              Sistema utilizado por barbeiros profissionais que querem crescer de verdade. O caderninho e as mensagens perdidas no WhatsApp ficaram no passado. Ideal para quem quer sair da estagnação e virar uma referência na região.
+            </p>
+          </div>
+          <motion.div 
+             whileHover={{ scale: 1.02 }}
+             className="px-8 py-3 bg-black text-white rounded-full font-black text-sm uppercase tracking-widest flex items-center gap-2"
+          >
+             <ShieldCheck className="w-5 h-5" />
+             Aprovado por profissionais do setor
+          </motion.div>
         </div>
       </section>
 
@@ -390,47 +601,73 @@ export default function LandingPage() {
       )}
 
       {/* Pricing Section */}
-      <section className="py-24 px-6 bg-zinc-950 border-t border-white/10">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">Simples e Transparente</h2>
-          <p className="text-text-light text-lg mb-12">Sem taxas escondidas, sem comissão por agendamento. Um valor fixo para você crescer.</p>
-          
-          <div className="bg-zinc-900 border border-white/10 rounded-3xl p-10 max-w-lg mx-auto relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl"></div>
-            <h3 className="text-2xl font-bold text-white mb-2">Plano Profissional</h3>
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <span className="text-5xl font-display font-bold text-white">R$ 70</span>
-              <span className="text-zinc-400">/mês</span>
+      <section className="py-24 px-6 bg-zinc-950 border-t border-white/10 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col items-center">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-display font-bold text-white mb-6 uppercase italic">A Oferta Irresistível</h2>
+            <p className="text-text-light text-xl mb-4">Sem taxas escondidas, sem comissão. Apenas o valor que cabe no seu bolso.</p>
+            <div className="inline-flex items-center gap-2 px-6 py-2 bg-red-500 text-white font-black rounded-full animate-pulse uppercase text-sm tracking-widest">
+              <Flame className="w-5 h-5" />
+              Promoção Ativa: R$ 50/mês
             </div>
-            <ul className="space-y-4 mb-8 text-left">
-              <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Agendamentos ilimitados</li>
-              <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Página com a sua marca</li>
-              <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Painel de gestão completo</li>
-              <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Suporte prioritário</li>
-            </ul>
-            <Link to="/criar-conta" className="block w-full py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-gray-200 transition-colors text-center">
-              Começar agora
-            </Link>
+            <p className="text-red-500 font-black mt-6 uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+              <XOctagon className="w-5 h-5" /> 
+              Apenas 23 barbeiros ainda podem entrar com esse valor!
+            </p>
+          </div>
+          
+          <div className="max-w-4xl w-full grid md:grid-cols-2 gap-8 items-center">
+             <div className="p-10 rounded-3xl border border-white/10 bg-zinc-900 shadow-2xl relative group overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-red-500 group-hover:h-[6px] transition-all"></div>
+                <h3 className="text-xl font-bold text-white/50 mb-2 uppercase tracking-widest">Antigamente</h3>
+                <div className="flex items-center gap-2 mb-8">
+                  <span className="text-3xl font-display font-bold text-zinc-600 line-through">R$ 97</span>
+                  <span className="text-zinc-700">/mês</span>
+                </div>
+                <p className="text-zinc-600 text-sm mb-0 flex items-center gap-2"><TrendingDown className="w-4 h-4" /> Caderninho e perda de tempo</p>
+             </div>
+
+             <div className="p-10 rounded-3xl border-2 border-white bg-zinc-900 shadow-[0_0_60px_rgba(255,255,255,0.1)] relative overflow-hidden scale-110 z-10">
+               <div className="absolute -top-4 -right-4 bg-white text-black px-8 py-4 rotate-12 font-black uppercase text-xs">Melhor Oferta</div>
+               <h3 className="text-2xl font-bold text-white mb-2">Plano Pro Evolution</h3>
+               <div className="flex items-center gap-3 mb-8">
+                <span className="text-6xl font-display font-bold text-white">R$ 50</span>
+                <span className="text-zinc-400">/mês</span>
+               </div>
+               <ul className="space-y-4 mb-10 text-left">
+                <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Agendamentos Ilimitados</li>
+                <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Lembretes Automáticos</li>
+                <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Gestão de Faturamento</li>
+                <li className="flex items-center text-zinc-300"><CheckCircle2 className="w-5 h-5 text-white mr-3 shrink-0" /> Suporte VIP 24h</li>
+               </ul>
+               <Link to="/criar-conta" className="block w-full py-5 bg-white text-black rounded-2xl font-black text-xl hover:bg-gray-200 transition-all text-center uppercase shadow-2xl active:scale-95">
+                Garantir minha vaga agora
+               </Link>
+               <p className="text-zinc-500 text-[10px] text-center mt-6 font-bold uppercase tracking-widest">Preço promocional vitalício para os primeiros inscritos</p>
+             </div>
           </div>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-white/5 rounded-full blur-[120px]" />
-        </div>
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl md:text-6xl font-display font-bold text-white mb-6">
-            Pronto para dar o próximo passo?
+      <section className="py-32 px-6 relative overflow-hidden bg-white text-black">
+        <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
+          <div className="w-20 h-20 bg-black rounded-2xl flex items-center justify-center mb-8 rotate-3 shadow-2xl">
+            <Trophy className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-5xl md:text-8xl font-display font-black mb-8 uppercase leading-tight italic">
+            MAIS DE 100 BARBEIROS <br /> JÁ TOMARAM A DECISÃO.
           </h2>
-          <p className="text-xl text-text-light mb-10">
-            Junte-se às barbearias que estão dominando o mercado. Crie seu sistema agora e transforme a gestão do seu negócio hoje mesmo.
+          <p className="text-2xl font-bold mb-12 max-w-2xl leading-relaxed">
+            Agora é a sua vez. Ou você continua perdendo cliente pelo WhatsApp... ou começa hoje a automatizar seu negócio e faturar como um profissional.
           </p>
-          <Link to="/criar-conta" className="inline-flex items-center px-10 py-5 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-200 transition-all group shadow-[0_0_40px_rgba(255,255,255,0.3)]">
-            Criar minha conta agora
-            <ArrowRight className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          <div className="flex flex-col items-center gap-6">
+            <Link to="/criar-conta" className="inline-flex items-center px-12 py-6 bg-black text-white rounded-full font-black text-2xl hover:scale-105 transition-all group shadow-2xl uppercase italic">
+              Começar hoje por R$ 50/mês
+              <ArrowRight className="w-8 h-8 ml-3 group-hover:translate-x-2 transition-transform" />
+            </Link>
+            <p className="text-zinc-500 font-bold uppercase tracking-tighter text-xs">Últimas 23 vagas restando para o preço atual</p>
+          </div>
         </div>
       </section>
 
